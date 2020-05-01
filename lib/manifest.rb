@@ -13,7 +13,7 @@ module PluginTool
     (filename =~ PLUGIN_ACCEPTABLE_FILENAME) || (PLUGIN_ACCEPTABLE_FILENAME_EXCEPTIONS.include?(filename))
   end
 
-  def self.generate_manifest(directory)
+  def self.generate_manifest(plugin, directory)
     manifest = Hash.new
     Dir.glob("#{directory}/**/*").sort.each do |pathname|
       # Ignore directories
@@ -22,6 +22,9 @@ module PluginTool
       next if pathname =~ /\~/
       # Check file
       filename = pathname.slice(directory.length + 1, pathname.length)
+      # Is it explicitly ignored by developer.json
+      next if plugin.check_filename_is_ignored(filename)
+      # Not ignored, but also not allowed
       unless plugin_filename_allowed?(filename)
         puts "WARNING: Ignoring #{filename}"
         next

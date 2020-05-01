@@ -91,6 +91,28 @@ module PluginTool
       end
     end
 
+    def ignored_plugin_files
+      @ignored_plugin_files ||= begin
+        # developer.json file might contain some files/paths which we should ignore
+        if developer_json['ignore'].kind_of?(Array)
+          developer_json['ignore']
+        else
+          []
+        end
+      end
+    end
+
+    def check_filename_is_ignored(filename)
+      if self.ignored_plugin_files.any?
+        ignored = false
+        self.ignored_plugin_files.each do |pattern|
+          ignored = File.fnmatch(pattern, filename)
+          break if ignored
+        end
+        return ignored
+      end
+    end
+
     def exclude_files_from_syntax_check
       @exclude_files_from_syntax_check ||= begin
         # developer.json file might contain some files which should not be syntax checked
@@ -167,7 +189,7 @@ module PluginTool
 
     def develop_scan_and_upload(first_run)
       should_apply = first_run
-      next_manifest = PluginTool.generate_manifest(@plugin_dir)
+      next_manifest = PluginTool.generate_manifest(self, @plugin_dir)
       if !(next_manifest.has_key?("plugin.json"))
         # If the plugin.json file is deleted, just uninstall the plugin from the server
         command('uninstall')
